@@ -68,3 +68,7 @@ def process():
     except Exception as e:
         print(f"서버 처리 중 예외 발생:{str(e)}")
         return {"error":"서버 오류", "details":str(e)}, 500
+
+if __name__=="__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("port",
+                                                    10000)))
