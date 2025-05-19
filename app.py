@@ -22,10 +22,13 @@ def index():
 def process():
     try:
         user_input = request.form.get("text", "")
+        print(f"입력받은 텍스트: {user_input}")  # 디버깅 로그
+
         if not user_input:
+            print("텍스트 누락: 400 에러 발생")
             return {"error": "No input provided."}, 400
 
-        # Get GPT response
+        # GPT 처리
         completion = client.chat.completions.create(
             model="gpt-4",
             messages=[
@@ -35,8 +38,9 @@ def process():
         )
 
         answer = completion.choices[0].message.content.strip()
+        print(f"GPT 응답: {answer}")
 
-        # TTS with ElevenLabs
+        # TTS 처리
         tts_response = requests.post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
             headers={
@@ -53,13 +57,10 @@ def process():
             }
         )
 
+        print(f"TTS 응답 코드: {tts_response.status_code}")
+
         if tts_response.status_code != 200:
+            print(f"TTS 실패: {tts_response.text}")
             return {"error": "TTS 실패", "details": tts_response.text}, 500
 
-        return send_file(BytesIO(tts_response.content), mimetype="audio/mpeg")
-
-    except Exception as e:
-        return {"error": "서버 오류", "details": str(e)}, 500
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+        return send_file(BytesIO(tts_response.content), mimetype
