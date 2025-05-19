@@ -1,11 +1,11 @@
 import os
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, render_template
 from openai import OpenAI
 import requests
 from io import BytesIO
 from dotenv import load_dotenv
 
-# 환경 변수 로드
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
@@ -16,27 +16,27 @@ VOICE_ID = os.getenv("VOICE_ID")
 
 @app.route("/")
 def index():
-    return "이안 백엔드 작동 중입니다."
+    return render_template("index.html")
 
 @app.route("/process", methods=["POST"])
 def process():
     try:
         user_input = request.form.get("text", "")
         if not user_input:
-            return jsonify({"error": "No text provided"}), 400
+            return {"error": "No input provided."}, 400
 
-        # GPT 응답 생성
+        # Get GPT response
         completion = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "너는 친절하고 따뜻한 남성 비서야."},
+                {"role": "system", "content": "너는 친절하고 다정한 남성 비서야."},
                 {"role": "user", "content": user_input}
             ]
         )
 
         answer = completion.choices[0].message.content.strip()
 
-        # ElevenLabs TTS 요청
+        # TTS with ElevenLabs
         tts_response = requests.post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
             headers={
@@ -54,13 +54,12 @@ def process():
         )
 
         if tts_response.status_code != 200:
-            return jsonify({"error": "TTS 요청 실패", "details": tts_response.text}), 500
+            return {"error": "TTS 실패", "details": tts_response.text}, 500
 
-        audio_data = BytesIO(tts_response.content)
-        return send_file(audio_data, mimetype="audio/mpeg")
+        return send_file(BytesIO(tts_response.content), mimetype="audio/mpeg")
 
     except Exception as e:
-        return jsonify({"error": "서버 처리 중 오류 발생", "details": str(e)}), 500
+        return {"error": "서버 오류", "details": str(e)}, 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
