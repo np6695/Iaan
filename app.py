@@ -64,3 +64,7 @@ def process():
             return {"error": "TTS 실패", "details": tts_response.text}, 500
 
         return send_file(BytesIO(tts_response.content), mimetype="audio/mpeg")
+
+    except Exception as e:
+        print(f"서버 처리 중 예외 발생:{str(e)}")
+        return {"error":"서버 오류", "details":str(e)}, 500
