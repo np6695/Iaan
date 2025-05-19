@@ -63,4 +63,4 @@ def process():
             print(f"TTS 실패: {tts_response.text}")
             return {"error": "TTS 실패", "details": tts_response.text}, 500
 
-        return send_file(BytesIO(tts_response.content), mimetype
+        return send_file(BytesIO(tts_response.content), mimetype="audio/mpeg")
