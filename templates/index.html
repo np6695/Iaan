@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>이안의 응답</title>
+</head>
+<body>
+  <h2>이안에게 텍스트로 말 걸어보세요</h2>
+  <form id="chatForm">
+    <input type="text" name="text" id="text" placeholder="이안아, 오늘 어땠어?" size="40">
+    <button type="submit">보내기</button>
+  </form>
+  <p id="status">대기 중...</p>
+  <audio id="audioPlayback" controls></audio>
+
+  <script>
+    const form = document.getElementById("chatForm");
+    const status = document.getElementById("status");
+    const audio = document.getElementById("audioPlayback");
+
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      status.innerText = "이안이 생각 중...";
+
+      const formData = new FormData(form);
+      fetch("/process", {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.blob())
+      .then(blob => {
+        const audioURL = URL.createObjectURL(blob);
+        audio.src = audioURL;
+        audio.onloadeddata = () => {
+          audio.play();
+          status.innerText = "이안이 대답 중...";
+        };
+      })
+      .catch(err => {
+        console.error("에러 발생:", err);
+        status.innerText = "에러 발생...";
+      });
+    };
+  </script>
+</body>
+</html>
