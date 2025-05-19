@@ -1,46 +1,46 @@
 import os
-from flask import Flask, request, send_file, render_template
-from openai import OpenAI
 import requests
+from flask import Flask, request, send_file, jsonify
 from io import BytesIO
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 VOICE_ID = os.getenv("VOICE_ID")
 
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.html")
+    return "이안 백엔드 작동 중입니다."
 
-@app.route("/process", methods=["POST"])
+@app.route('/process', methods=['POST'])
 def process():
     try:
-        user_input = request.form.get("text", "")
-        print(f"입력받은 텍스트: {user_input}")  # 디버깅 로그
+        user_text = request.form['text']
+        print(f"입력된 텍스트: {user_text}")
 
-        if not user_input:
-            print("텍스트 누락: 400 에러 발생")
-            return {"error": "No input provided."}, 400
-
-        # GPT 처리
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "너는 친절하고 다정한 남성 비서야."},
-                {"role": "user", "content": user_input}
-            ]
+        # GPT 응답 생성
+        gpt_response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "gpt-4",
+                "messages": [
+                    {"role": "system", "content": "너는 친절하고 다정한 남자 비서야. 유저의 말에 따뜻하게 반응해."},
+                    {"role": "user", "content": user_text}
+                ]
+            }
         )
-
-        answer = completion.choices[0].message.content.strip()
+        answer = gpt_response.json()['choices'][0]['message']['content']
         print(f"GPT 응답: {answer}")
 
-        # TTS 처리
+        # ElevenLabs TTS 요청
         tts_response = requests.post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
             headers={
@@ -61,14 +61,16 @@ def process():
 
         if tts_response.status_code != 200:
             print(f"TTS 실패: {tts_response.text}")
-            return {"error": "TTS 실패", "details": tts_response.text}, 500
+            return jsonify({"error": "TTS 실패", "details": tts_response.text}), 500
 
-        return send_file(BytesIO(tts_response.content), mimetype="audio/mpeg")
+        # 오디오 반환
+        audio_stream = BytesIO(tts_response.content)
+        audio_stream.seek(0)
+        return send_file(audio_stream, mimetype="audio/mpeg")
 
     except Exception as e:
-        print(f"서버 처리 중 예외 발생:{str(e)}")
-        return {"error":"서버 오류", "details":str(e)}, 500
+        print(f"서버 처리 중 예외 발생: {str(e)}")
+        return jsonify({"error": "서버 오류", "details": str(e)}), 500
 
-if __name__=="__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("port",
-                                                    10000)))
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
