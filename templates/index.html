@@ -1,13 +1,13 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>이안의 응답</title>
+  <meta charset="UTF-8" />
+  <title>이안에게 말 걸기</title>
 </head>
 <body>
   <h2>이안에게 텍스트로 말 걸어보세요</h2>
   <form id="chatForm">
-    <input type="text" name="text" id="text" placeholder="이안아, 오늘 어땠어?" size="40">
+    <input type="text" name="text" id="text" placeholder="이안아, 오늘 기분은 어때?" size="40">
     <button type="submit">보내기</button>
   </form>
   <p id="status">대기 중...</p>
@@ -18,7 +18,7 @@
     const status = document.getElementById("status");
     const audio = document.getElementById("audioPlayback");
 
-    form.onsubmit = function(e) {
+    form.onsubmit = function (e) {
       e.preventDefault();
       status.innerText = "이안이 생각 중...";
 
@@ -27,7 +27,12 @@
         method: "POST",
         body: formData
       })
-      .then(res => res.blob())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("서버 오류 발생");
+        }
+        return res.blob();
+      })
       .then(blob => {
         const audioURL = URL.createObjectURL(blob);
         audio.src = audioURL;
@@ -38,7 +43,7 @@
       })
       .catch(err => {
         console.error("에러 발생:", err);
-        status.innerText = "에러 발생...";
+        status.innerText = "에러 발생... 다시 시도해주세요.";
       });
     };
   </script>
