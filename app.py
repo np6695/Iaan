@@ -1,3 +1,5 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
 from flask import Flask, request, send_file, render_template
 import openai
 import requests
