@@ -32,11 +32,12 @@ def process():
             json={
                 "model": "gpt-4",
                 "messages": [
-                    {"role": "system", "content": "너는 친절하고 다정한 남자 비서야. 유저의 말에 따뜻하게 반응해."},
+                    {"role": "system", "content": "너는 친절하고 다정한 남성 비서야."},
                     {"role": "user", "content": user_text}
                 ]
             }
         )
+        gpt_response.raise_for_status()
         answer = gpt_response.json()['choices'][0]['message']['content']
         print(f"GPT 응답: {answer}")
 
@@ -58,12 +59,11 @@ def process():
         )
 
         print(f"TTS 응답 코드: {tts_response.status_code}")
-
         if tts_response.status_code != 200:
             print(f"TTS 실패: {tts_response.text}")
             return jsonify({"error": "TTS 실패", "details": tts_response.text}), 500
 
-        # 오디오 반환
+        # 음성 데이터 전송
         audio_stream = BytesIO(tts_response.content)
         audio_stream.seek(0)
         return send_file(audio_stream, mimetype="audio/mpeg")
