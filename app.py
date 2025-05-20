@@ -18,7 +18,7 @@ openai.api_key = OPENAI_API_KEY
 
 @app.route('/')
 def index():
-    return "이안 백엔드 작동 중입니다."
+    return render_template('index.html')
 
 @app.route('/process', methods=['POST'])
 def process():
