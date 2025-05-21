@@ -75,5 +75,5 @@ def process():
         return {"error": "서버 오류", "details": str(e)}, 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000, debuf=True)
+    app.run(host="0.0.0.0", port=10000, debug=True)
 
