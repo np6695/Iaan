@@ -4,9 +4,13 @@ import requests
 from io import BytesIO
 from dotenv import load_dotenv
 import base64
+import openai
 
+# 환경변수 불러오기
 load_dotenv()
 GOOGLE_TTS_API_KEY = os.getenv("GOOGLE_TTS_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
 app = Flask(__name__)
 
@@ -19,16 +23,33 @@ def process():
     try:
         user_text = request.form.get("text")
 
+        # GPT에게 응답 생성 요청
+        chat_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "당신은 사용자에게 따뜻하고 존댓말을 사용하는 한국어 남성 비서입니다."
+                },
+                {
+                    "role": "user",
+                    "content": user_text
+                }
+            ]
+        )
+        gpt_reply = chat_response["choices"][0]["message"]["content"]
+
+        # Google TTS 요청
         endpoint = "https://texttospeech.googleapis.com/v1/text:synthesize"
         headers = {
             "X-Goog-Api-Key": GOOGLE_TTS_API_KEY,
             "Content-Type": "application/json; charset=utf-8"
         }
         body = {
-            "input": {"text": user_text},
+            "input": {"text": gpt_reply},
             "voice": {
                 "languageCode": "ko-KR",
-                "name": "ko-KR-Neural2-A" # 남성 음성
+                "name": "ko-KR-Neural2-C"  # 한국어 남성 음성
             },
             "audioConfig": {"audioEncoding": "MP3"}
         }
@@ -39,7 +60,7 @@ def process():
         if "audioContent" not in result:
             return {"error": "TTS 변환 실패", "details": result}, 500
 
-        # base64 디코딩
+        # base64 → mp3 디코딩
         audio_data = base64.b64decode(result["audioContent"])
         audio_stream = BytesIO(audio_data)
         audio_stream.seek(0)
